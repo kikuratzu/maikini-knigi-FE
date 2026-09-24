@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Maikini Knigi — Independent Bookshop in Plovdiv</title>
+  <meta name="description" content="Maikini Knigi is a small independent bookshop in Plovdiv. Browse fiction, classics, non-fiction and children's books and order online.">
+  <meta name="theme-color" content="#faf7f2">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232f5d50'/%3E%3Cpath d='M18 18h11a5 5 0 0 1 5 5v25a4 4 0 0 0-4-4H18Z M46 18H35a5 5 0 0 0-5 5' fill='none' stroke='%23faf7f2' stroke-width='3.5' stroke-linejoin='round'/%3E%3Cpath d='M46 18v26H34a4 4 0 0 0-4 4' fill='none' stroke='%23faf7f2' stroke-width='3.5' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <script>document.documentElement.classList.add("js");</script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <!-- ============ HEADER ============ -->
+  <header class="header" id="header">
+    <div class="container header__inner">
+      <a href="#top" class="logo" aria-label="Maikini Knigi — home">
+        <span class="logo__mark" aria-hidden="true">
+          <svg viewBox="0 0 64 64" width="38" height="38">
+            <rect width="64" height="64" rx="14" fill="#2f5d50"/>
+            <path d="M18 18h11a5 5 0 0 1 5 5v25a4 4 0 0 0-4-4H18Z" fill="none" stroke="#faf7f2" stroke-width="3.5" stroke-linejoin="round"/>
+            <path d="M46 18H35a5 5 0 0 0-5 5M46 18v26H34a4 4 0 0 0-4 4" fill="none" stroke="#faf7f2" stroke-width="3.5" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="logo__text">
+          <span class="logo__name">Maikini Knigi</span>
+          <span class="logo__sub" lang="bg">Майкини книги · Plovdiv</span>
+        </span>
+      </a>
+
+      <nav class="nav" id="nav" aria-label="Main navigation">
+        <ul class="nav__list">
+          <li><a class="nav__link" href="#shop">Shop</a></li>
+          <li><a class="nav__link" href="#categories">Categories</a></li>
+          <li><a class="nav__link" href="#featured">Book of the month</a></li>
+          <li><a class="nav__link" href="#about">About</a></li>
+          <li><a class="nav__link" href="#visit">Visit</a></li>
+        </ul>
+      </nav>
+
+      <div class="header__actions">
+        <a class="icon-btn" href="#shop" id="searchJump" aria-label="Search books">
+          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        </a>
+        <button class="icon-btn cart-btn" id="cartOpen" type="button" aria-label="Open basket, 0 items" aria-controls="cart" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1.3 11.1a2 2 0 0 1-2 1.9H8.3a2 2 0 0 1-2-1.9L5 8Z"/><path d="M9 8V7a3 3 0 0 1 6 0v1"/></svg>
+          <span class="cart-btn__count" id="cartCount" aria-hidden="true">0</span>
+        </button>
+        <button class="icon-btn burger" id="burger" type="button" aria-label="Open menu" aria-controls="nav" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ============ HERO ============ -->
+    <section class="hero" id="top">
+      <div class="container hero__inner">
+        <div class="hero__content">
+          <p class="eyebrow">Independent bookshop · since 2012</p>
+          <h1 class="hero__title">Good books, chosen with care.</h1>
+          <p class="hero__text">
+            A small shop in the centre of Plovdiv with a big love for stories. We pick every title on our
+            shelves ourselves — and we're always happy to help you find your next favourite read.
+          </p>
+          <div class="hero__cta">
+            <a href="#shop" class="btn btn--primary">Browse the shop</a>
+            <a href="#featured" class="btn btn--ghost">Book of the month</a>
+          </div>
+          <ul class="hero__perks">
+            <li>Free delivery over €40</li>
+            <li>Gift wrapping on request</li>
+            <li>Pick up in store</li>
+          </ul>
+        </div>
+
+        <div class="hero__visual" aria-hidden="true">
+          <div class="shelf">
+            <div class="shelf__books" id="heroBooks"></div>
+            <div class="shelf__board"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CATEGORIES ============ -->
+    <section class="section section--tight" id="categories" aria-labelledby="categoriesTitle">
+      <div class="container">
+        <div class="section__head section__head--row reveal">
+          <div>
+            <p class="eyebrow">Browse by</p>
+            <h2 class="section__title" id="categoriesTitle">Categories</h2>
+          </div>
+        </div>
+        <div class="categories" id="categoryGrid"></div>
+      </div>
+    </section>
+
+    <!-- ============ SHOP ============ -->
+    <section class="section shop" id="shop" aria-labelledby="shopTitle">
+      <div class="container">
+        <div class="section__head section__head--row reveal">
+          <div>
+            <p class="eyebrow">On our shelves</p>
+            <h2 class="section__title" id="shopTitle">The shop</h2>
+          </div>
+          <p class="section__text">Hand-picked titles, in stock and ready to send.</p>
+        </div>
+
+        <div class="toolbar">
+          <label class="search" for="search">
+            <span class="visually-hidden">Search by title or author</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input id="search" type="search" placeholder="Search by title or author" autocomplete="off">
+          </label>
+
+          <div class="toolbar__right">
+            <label class="select">
+              <span class="visually-hidden">Filter by category</span>
+              <select id="genre"></select>
+            </label>
+            <label class="select">
+              <span class="visually-hidden">Sort books</span>
+              <select id="sort">
+                <option value="featured">Featured</option>
+                <option value="price-asc">Price: low to high</option>
+                <option value="price-desc">Price: high to low</option>
+                <option value="title">Title: A–Z</option>
+                <option value="newest">Newest first</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <p class="results" id="results" aria-live="polite"></p>
+
+        <div class="grid" id="bookGrid"></div>
+
+        <div class="empty" id="emptyState" hidden>
+          <p class="empty__title">No books found</p>
+          <p>Try a different search or category.</p>
+          <button class="btn btn--ghost" type="button" id="resetFilters">Clear filters</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FEATURED ============ -->
+    <section class="section featured" id="featured" aria-labelledby="featuredTitle">
+      <div class="container featured__inner">
+        <div class="featured__visual reveal">
+          <div class="featured__cover" id="featuredCover"></div>
+        </div>
+        <div class="featured__content reveal">
+          <p class="eyebrow">Book of the month</p>
+          <h2 class="section__title" id="featuredTitle">Time Shelter</h2>
+          <p class="featured__author">by Georgi Gospodinov</p>
+          <p>
+            A clinic in Zurich recreates the past, decade by decade, to help patients with memory loss —
+            until whole countries start voting on which decade to go back to. Funny, tender and unsettling,
+            the 2023 International Booker Prize winner by one of Bulgaria's finest writers.
+          </p>
+          <blockquote class="featured__quote">
+            <p>“The book we've pressed into the most hands this year. Read it, then come and talk to us about it.”</p>
+            <footer>— Mila, bookseller</footer>
+          </blockquote>
+          <div class="featured__buy">
+            <span class="featured__price" id="featuredPrice"></span>
+            <button class="btn btn--primary" type="button" data-add="time-shelter">Add to basket</button>
+            <button class="btn btn--ghost" type="button" data-open="time-shelter">More details</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ABOUT ============ -->
+    <section class="section about" id="about" aria-labelledby="aboutTitle">
+      <div class="container">
+        <div class="about__intro reveal">
+          <p class="eyebrow">About us</p>
+          <h2 class="section__title" id="aboutTitle">A bookshop that feels like home</h2>
+          <p class="section__text">
+            Maikini Knigi — “Mum's books” — began with one family's library and a shelf by the window.
+            Today it's a cosy shop with armchairs, strong coffee and a reading club every other Thursday.
+          </p>
+        </div>
+        <ul class="features">
+          <li class="feature reveal">
+            <span class="feature__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 6.5C10 5 7 4.5 4 5v13c3-.5 6 0 8 1.5 2-1.5 5-2 8-1.5V5c-3-.5-6 0-8 1.5Z"/><path d="M12 6.5V19"/></svg>
+            </span>
+            <h3>Carefully curated</h3>
+            <p>Every book is chosen by our booksellers. No algorithms, just people who read.</p>
+          </li>
+          <li class="feature reveal">
+            <span class="feature__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="1.5"/><path d="M12 8v13M3 12h18M12 8c-2-3-6-4-6-1.5S10 8 12 8Zm0 0c2-3 6-4 6-1.5S14 8 12 8Z"/></svg>
+            </span>
+            <h3>Gift wrapping</h3>
+            <p>Add a handwritten note and we'll wrap your book in our kraft paper for free.</p>
+          </li>
+          <li class="feature reveal">
+            <span class="feature__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="1.8"/><circle cx="17" cy="18" r="1.8"/></svg>
+            </span>
+            <h3>Fast delivery</h3>
+            <p>Delivery across Bulgaria in 1–3 working days. Free on orders over €40.</p>
+          </li>
+          <li class="feature reveal">
+            <span class="feature__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M15 14.5c3 0 6 1.8 6 5.5"/></svg>
+            </span>
+            <h3>Reading club</h3>
+            <p>Join us every other Thursday at 19:00 to talk about the book of the month.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ============ NEWSLETTER ============ -->
+    <section class="section section--tight" aria-labelledby="newsTitle">
+      <div class="container">
+        <div class="newsletter reveal">
+          <div class="newsletter__text">
+            <h2 id="newsTitle">New arrivals, once a month</h2>
+            <p>Our favourite new books, events and the occasional discount. No spam, ever.</p>
+          </div>
+          <form class="newsletter__form" id="newsletterForm" novalidate>
+            <label for="email" class="visually-hidden">Email address</label>
+            <input id="email" name="email" type="email" autocomplete="email" placeholder="Your email address" required aria-describedby="newsletterMsg">
+            <button class="btn btn--light" type="submit">Subscribe</button>
+            <p class="newsletter__msg" id="newsletterMsg" aria-live="polite"></p>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ VISIT ============ -->
+    <section class="section visit" id="visit" aria-labelledby="visitTitle">
+      <div class="container visit__inner">
+        <div class="visit__content reveal">
+          <p class="eyebrow">Visit the shop</p>
+          <h2 class="section__title" id="visitTitle">Come in and browse</h2>
+          <address class="visit__address">
+            Maikini Knigi<br>
+            ul. "Otets Paisiy" 18<br>
+            4000 Plovdiv, Bulgaria
+          </address>
+          <ul class="visit__contact">
+            <li><a href="tel:+359887654321">+359 887 654 321</a></li>
+            <li><a href="mailto:hello@maikiniknigi.bg">hello@maikiniknigi.bg</a></li>
+          </ul>
+          <a class="btn btn--ghost" href="https://www.openstreetmap.org/search?query=Otets%20Paisiy%2018%2C%20Plovdiv" target="_blank" rel="noopener noreferrer">Get directions</a>
+        </div>
+
+        <div class="hours reveal">
+          <div class="hours__head">
+            <h3>Opening hours</h3>
+            <span class="status" id="openStatus"><span class="status__dot" aria-hidden="true"></span><span class="status__text">Opening hours</span></span>
+          </div>
+          <table class="hours__table">
+            <caption class="visually-hidden">Opening hours</caption>
+            <tbody>
+              <tr data-day="1"><th scope="row">Monday</th><td>10:00 – 19:00</td></tr>
+              <tr data-day="2"><th scope="row">Tuesday</th><td>10:00 – 19:00</td></tr>
+              <tr data-day="3"><th scope="row">Wednesday</th><td>10:00 – 19:00</td></tr>
+              <tr data-day="4"><th scope="row">Thursday</th><td>10:00 – 21:00</td></tr>
+              <tr data-day="5"><th scope="row">Friday</th><td>10:00 – 19:00</td></tr>
+              <tr data-day="6"><th scope="row">Saturday</th><td>10:00 – 18:00</td></tr>
+              <tr data-day="0"><th scope="row">Sunday</th><td>Closed</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <p class="footer__name">Maikini Knigi</p>
+        <p>An independent bookshop in the heart of Plovdiv.</p>
+      </div>
+      <div>
+        <h3 class="footer__title">Shop</h3>
+        <ul class="footer__list">
+          <li><a href="#shop">All books</a></li>
+          <li><a href="#categories">Categories</a></li>
+          <li><a href="#featured">Book of the month</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="footer__title">Help</h3>
+        <ul class="footer__list">
+          <li><a href="#about">Delivery</a></li>
+          <li><a href="#about">Gift wrapping</a></li>
+          <li><a href="#visit">Contact</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="footer__title">Visit</h3>
+        <p>ul. "Otets Paisiy" 18<br>4000 Plovdiv</p>
+      </div>
+    </div>
+    <div class="container footer__bottom">
+      <p>© <span id="year">2026</span> Maikini Knigi. All rights reserved.</p>
+      <p>Made with love for readers.</p>
+    </div>
+  </footer>
+
+  <!-- ============ BOOK DETAILS DIALOG ============ -->
+  <dialog class="modal" id="bookModal" aria-labelledby="modalTitle">
+    <button class="icon-btn modal__close" type="button" id="modalClose" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div class="modal__inner">
+      <div class="modal__cover" id="modalCover"></div>
+      <div class="modal__content">
+        <p class="modal__genre" id="modalGenre"></p>
+        <h2 class="modal__title" id="modalTitle"></h2>
+        <p class="modal__author" id="modalAuthor"></p>
+        <p class="modal__desc" id="modalDesc"></p>
+        <dl class="modal__meta">
+          <div><dt>First published</dt><dd id="modalYear"></dd></div>
+          <div><dt>Format</dt><dd id="modalFormat"></dd></div>
+          <div><dt>Availability</dt><dd>In stock</dd></div>
+        </dl>
+        <div class="modal__buy">
+          <span class="modal__price" id="modalPrice"></span>
+          <button class="btn btn--primary" type="button" id="modalAdd">Add to basket</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ============ BASKET DRAWER ============ -->
+  <div class="overlay" id="overlay" hidden></div>
+  <aside class="cart" id="cart" aria-label="Shopping basket" aria-hidden="true" inert>
+    <div class="cart__head">
+      <h2>Your basket</h2>
+      <button class="icon-btn" id="cartClose" type="button" aria-label="Close basket">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="cart__body">
+      <div class="cart__empty" id="cartEmpty">
+        <p class="cart__empty-title">Your basket is empty</p>
+        <p>Find something good to read.</p>
+        <a href="#shop" class="btn btn--ghost" id="cartBrowse">Browse books</a>
+      </div>
+      <ul class="cart__list" id="cartList"></ul>
+    </div>
+    <div class="cart__foot" id="cartFoot" hidden>
+      <p class="cart__shipping" id="cartShipping"></p>
+      <dl class="cart__totals">
+        <div><dt>Subtotal</dt><dd id="cartSubtotal">€0.00</dd></div>
+        <div><dt>Delivery</dt><dd id="cartDelivery">€0.00</dd></div>
+        <div class="cart__total"><dt>Total</dt><dd id="cartTotal">€0.00</dd></div>
+      </dl>
+      <button class="btn btn--primary btn--block" id="checkout" type="button">Checkout</button>
+      <button class="cart__clear" id="cartClear" type="button">Empty basket</button>
+    </div>
+  </aside>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
