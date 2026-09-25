@@ -1,15 +1,18 @@
 /* =========================================================
    Maikini Knigi — Independent bookshop
+   Talks to the Spring Boot backend in /backend (books, basket, orders).
    ========================================================= */
 (function () {
   "use strict";
 
   /* ---------- Settings ---------- */
-  var CART_KEY = "maikini-knigi-basket";
-  var SHIPPING = 399;             // cents
-  var FREE_SHIPPING_FROM = 4000;  // cents
+  // Backend address: js/config.js can set window.MAIKINI_API_BASE; otherwise the backend is
+  // expected on port 8080 of the same host that serves this page.
+  var API_BASE = (window.MAIKINI_API_BASE ||
+    (/^https?:$/.test(location.protocol) ? location.protocol + "//" + location.hostname + ":8080" : "http://localhost:8080")
+  ).replace(/\/+$/, "") + "/api";
   var TIME_ZONE = "Europe/Sofia";
-  var MAX_QTY = 20;
+  var LOW_STOCK = 3;
 
   // Opening hours in minutes from midnight; null = closed. 0 = Sunday.
   var HOURS = {
@@ -34,52 +37,53 @@
   var GENRE_BY_ID = {};
   GENRES.forEach(function (g) { GENRE_BY_ID[g.id] = g; });
 
-  /* ---------- Books (prices in euro cents) ---------- */
-  var BOOKS = [
-    { id: "time-shelter", title: "Time Shelter", author: "Georgi Gospodinov", genre: "bulgarian", year: 2020, format: "Paperback", price: 1890, badge: "pick", cover: ["#5c1f24", "#d8bd7c", "ornate"],
+  /* ---------- Book details ----------
+     The backend only knows each book's name, price and stock. Everything else shown on the page
+     (author, category, cover, description) lives here and is matched to the backend by title. */
+  var CATALOG = [
+    { title: "Time Shelter", author: "Georgi Gospodinov", genre: "bulgarian", year: 2020, format: "Paperback", badge: "pick", cover: ["#5c1f24", "#d8bd7c", "ornate"],
       desc: "A clinic for the past opens in Zurich, each floor faithfully recreating a different decade to comfort patients with memory loss. Soon whole countries want to go back in time. Winner of the 2023 International Booker Prize." },
-    { id: "midnight-library", title: "The Midnight Library", author: "Matt Haig", genre: "fiction", year: 2020, format: "Paperback", price: 1490, badge: "best", cover: ["#1f2d3d", "#d8bd7c", "arch"],
+    { title: "The Midnight Library", author: "Matt Haig", genre: "fiction", year: 2020, format: "Paperback", badge: "best", cover: ["#1f2d3d", "#d8bd7c", "arch"],
       desc: "Between life and death there is a library, and every book in it lets Nora try a different version of the life she could have lived. A warm, hopeful novel about regret and second chances." },
-    { id: "pride-and-prejudice", title: "Pride and Prejudice", author: "Jane Austen", genre: "classics", year: 1813, format: "Hardcover", price: 1690, badge: "", cover: ["#3b4a2f", "#e3cf98", "frame"],
+    { title: "Pride and Prejudice", author: "Jane Austen", genre: "classics", year: 1813, format: "Hardcover", badge: "", cover: ["#3b4a2f", "#e3cf98", "frame"],
       desc: "Elizabeth Bennet meets the proud Mr Darcy, and first impressions turn out to be anything but reliable. Witty, sharp and endlessly re-readable." },
-    { id: "dune", title: "Dune", author: "Frank Herbert", genre: "fantasy", year: 1965, format: "Paperback", price: 1790, badge: "best", cover: ["#8a5a2b", "#f0dfb4", "circle"],
+    { title: "Dune", author: "Frank Herbert", genre: "fantasy", year: 1965, format: "Paperback", badge: "best", cover: ["#8a5a2b", "#f0dfb4", "circle"],
       desc: "On the desert planet Arrakis, young Paul Atreides is drawn into a struggle over the most valuable substance in the universe. A landmark of science fiction." },
-    { id: "sapiens", title: "Sapiens", author: "Yuval Noah Harari", genre: "nonfiction", year: 2011, format: "Paperback", price: 1990, badge: "", cover: ["#d9c9a3", "#3a2a1c", "band"],
+    { title: "Sapiens", author: "Yuval Noah Harari", genre: "nonfiction", year: 2011, format: "Paperback", badge: "", cover: ["#d9c9a3", "#3a2a1c", "band"],
       desc: "A brief history of humankind, from the first humans walking the earth to the revolutions — cognitive, agricultural and scientific — that shaped the world we live in." },
-    { id: "little-prince", title: "The Little Prince", author: "Antoine de Saint-Exupéry", genre: "children", year: 1943, format: "Hardcover", price: 1290, badge: "", cover: ["#2d4660", "#e6c97a", "circle"],
+    { title: "The Little Prince", author: "Antoine de Saint-Exupéry", genre: "children", year: 1943, format: "Hardcover", badge: "", cover: ["#2d4660", "#e6c97a", "circle"],
       desc: "A pilot stranded in the desert meets a little prince from a tiny asteroid. A gentle, wise story for children and grown-ups alike." },
-    { id: "under-the-yoke", title: "Under the Yoke", author: "Ivan Vazov", genre: "bulgarian", year: 1894, format: "Paperback", price: 1590, badge: "", cover: ["#4a2e1f", "#d8bd7c", "ornate"],
+    { title: "Under the Yoke", author: "Ivan Vazov", genre: "bulgarian", year: 1894, format: "Paperback", badge: "", cover: ["#4a2e1f", "#d8bd7c", "ornate"],
       desc: "The great Bulgarian novel of the April Uprising of 1876 — a story of love, courage and a small town on the eve of revolt." },
-    { id: "hundred-years", title: "One Hundred Years of Solitude", author: "Gabriel García Márquez", genre: "classics", year: 1967, format: "Paperback", price: 1790, badge: "", cover: ["#a3782f", "#2b1d14", "frame"],
+    { title: "One Hundred Years of Solitude", author: "Gabriel García Márquez", genre: "classics", year: 1967, format: "Paperback", badge: "", cover: ["#a3782f", "#2b1d14", "frame"],
       desc: "Seven generations of the Buendía family in the town of Macondo, told with humour, magic and unforgettable imagination." },
-    { id: "hobbit", title: "The Hobbit", author: "J. R. R. Tolkien", genre: "fantasy", year: 1937, format: "Hardcover", price: 1890, badge: "", cover: ["#2f4a33", "#d8bd7c", "arch"],
+    { title: "The Hobbit", author: "J. R. R. Tolkien", genre: "fantasy", year: 1937, format: "Hardcover", badge: "", cover: ["#2f4a33", "#d8bd7c", "arch"],
       desc: "Bilbo Baggins is perfectly happy at home — until a wizard and thirteen dwarves arrive and sweep him off on an adventure to a dragon's mountain." },
-    { id: "atomic-habits", title: "Atomic Habits", author: "James Clear", genre: "nonfiction", year: 2018, format: "Paperback", price: 1790, badge: "best", cover: ["#e3d6b6", "#5c1f24", "band"],
+    { title: "Atomic Habits", author: "James Clear", genre: "nonfiction", year: 2018, format: "Paperback", badge: "best", cover: ["#e3d6b6", "#5c1f24", "band"],
       desc: "A practical guide to building good habits and breaking bad ones through small, steady changes that add up over time." },
-    { id: "master-and-margarita", title: "The Master and Margarita", author: "Mikhail Bulgakov", genre: "classics", year: 1967, format: "Paperback", price: 1590, badge: "", cover: ["#1e1b24", "#c9a55a", "circle"],
+    { title: "The Master and Margarita", author: "Mikhail Bulgakov", genre: "classics", year: 1967, format: "Paperback", badge: "", cover: ["#1e1b24", "#c9a55a", "circle"],
       desc: "The Devil comes to Moscow with a very strange retinue, and nothing is ever the same. A dazzling satire, love story and fantasy in one." },
-    { id: "norwegian-wood", title: "Norwegian Wood", author: "Haruki Murakami", genre: "fiction", year: 1987, format: "Paperback", price: 1490, badge: "", cover: ["#56663f", "#efe2c2", "band"],
+    { title: "Norwegian Wood", author: "Haruki Murakami", genre: "fiction", year: 1987, format: "Paperback", badge: "", cover: ["#56663f", "#efe2c2", "band"],
       desc: "In late-1960s Tokyo, student Toru Watanabe looks back on his friendships, first loves and loss. Quiet, melancholic and beautifully written." },
-    { id: "physics-of-sorrow", title: "The Physics of Sorrow", author: "Georgi Gospodinov", genre: "bulgarian", year: 2011, format: "Paperback", price: 1690, badge: "", cover: ["#2b3f55", "#e3cf98", "arch"],
+    { title: "The Physics of Sorrow", author: "Georgi Gospodinov", genre: "bulgarian", year: 2011, format: "Paperback", badge: "", cover: ["#2b3f55", "#e3cf98", "arch"],
       desc: "A labyrinth of memories and stories, from the myth of the Minotaur to a childhood in socialist Bulgaria. Playful, moving and original." },
-    { id: "hungry-caterpillar", title: "The Very Hungry Caterpillar", author: "Eric Carle", genre: "children", year: 1969, format: "Board book", price: 990, badge: "", cover: ["#6d7f3a", "#f0dfb4", "circle"],
+    { title: "The Very Hungry Caterpillar", author: "Eric Carle", genre: "children", year: 1969, format: "Board book", badge: "", cover: ["#6d7f3a", "#f0dfb4", "circle"],
       desc: "One little caterpillar eats his way through the week before a wonderful surprise. A classic picture book for the very youngest readers." },
-    { id: "name-of-the-rose", title: "The Name of the Rose", author: "Umberto Eco", genre: "classics", year: 1980, format: "Paperback", price: 1790, badge: "", cover: ["#5a1d1d", "#d8bd7c", "ornate"],
+    { title: "The Name of the Rose", author: "Umberto Eco", genre: "classics", year: 1980, format: "Paperback", badge: "", cover: ["#5a1d1d", "#d8bd7c", "ornate"],
       desc: "A series of mysterious deaths in a 14th-century Italian abbey, investigated by a brilliant Franciscan friar and his young novice." },
-    { id: "educated", title: "Educated", author: "Tara Westover", genre: "nonfiction", year: 2018, format: "Paperback", price: 1690, badge: "new", cover: ["#c7b893", "#3a2a1c", "frame"],
+    { title: "Educated", author: "Tara Westover", genre: "nonfiction", year: 2018, format: "Paperback", badge: "new", cover: ["#c7b893", "#3a2a1c", "frame"],
       desc: "A memoir of a young woman who grew up without school in rural Idaho and went on to earn a PhD from Cambridge." },
-    { id: "philosophers-stone", title: "Harry Potter and the Philosopher's Stone", author: "J. K. Rowling", genre: "children", year: 1997, format: "Paperback", price: 1390, badge: "", cover: ["#6b1e2a", "#d8bd7c", "frame"],
+    { title: "Harry Potter and the Philosopher's Stone", author: "J. K. Rowling", genre: "children", year: 1997, format: "Paperback", badge: "", cover: ["#6b1e2a", "#d8bd7c", "frame"],
       desc: "On his eleventh birthday, Harry learns he is a wizard and sets off for Hogwarts School of Witchcraft and Wizardry." },
-    { id: "nineteen-eighty-four", title: "1984", author: "George Orwell", genre: "classics", year: 1949, format: "Paperback", price: 1290, badge: "", cover: ["#7a2a22", "#efe2c2", "band"],
+    { title: "1984", author: "George Orwell", genre: "classics", year: 1949, format: "Paperback", badge: "", cover: ["#7a2a22", "#efe2c2", "band"],
       desc: "Winston Smith lives under the constant watch of Big Brother. A chilling, still-relevant novel about truth, power and freedom." },
-    { id: "thinking-fast-slow", title: "Thinking, Fast and Slow", author: "Daniel Kahneman", genre: "nonfiction", year: 2011, format: "Paperback", price: 1990, badge: "", cover: ["#e0d2ae", "#34425a", "circle"],
+    { title: "Thinking, Fast and Slow", author: "Daniel Kahneman", genre: "nonfiction", year: 2011, format: "Paperback", badge: "", cover: ["#e0d2ae", "#34425a", "circle"],
       desc: "A Nobel Prize-winning psychologist explains the two systems that drive the way we think — and why we are so often wrong." },
-    { id: "crime-and-punishment", title: "Crime and Punishment", author: "Fyodor Dostoevsky", genre: "classics", year: 1866, format: "Paperback", price: 1490, badge: "", cover: ["#241c17", "#c9a55a", "ornate"],
+    { title: "Crime and Punishment", author: "Fyodor Dostoevsky", genre: "classics", year: 1866, format: "Paperback", badge: "", cover: ["#241c17", "#c9a55a", "ornate"],
       desc: "A poor former student in St Petersburg commits a terrible crime and is consumed by guilt. A gripping psychological masterpiece." }
   ];
 
-  var BOOK_BY_ID = {};
-  BOOKS.forEach(function (b, i) { b.order = i; BOOK_BY_ID[b.id] = b; });
+  var DEFAULT_DETAILS = { author: "", genre: null, year: null, format: "Paperback", badge: "", cover: ["#3b2a1e", "#d8bd7c", "frame"], desc: "" };
 
   var BADGES = {
     pick: { label: "Staff pick", cls: "badge--pick" },
@@ -91,6 +95,8 @@
   function $(sel, ctx) { return (ctx || document).querySelector(sel); }
   function $$(sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); }
 
+  // Prices are handled in cents to avoid rounding errors
+  function toCents(euros) { return Math.round(Number(euros) * 100); }
   function money(cents) { return "€" + (cents / 100).toFixed(2); }
 
   function esc(str) {
@@ -118,14 +124,57 @@
       "</span>";
   }
 
+  function prefersReducedMotion() {
+    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  var DETAILS_BY_TITLE = {};
+  CATALOG.forEach(function (d) { DETAILS_BY_TITLE[normalize(d.title)] = d; });
+
+  function detailsFor(title) {
+    return DETAILS_BY_TITLE[normalize(title)] || DEFAULT_DETAILS;
+  }
+
+  function genreName(book) {
+    return book.genre && GENRE_BY_ID[book.genre] ? GENRE_BY_ID[book.genre].name : "Books";
+  }
+
+  /* ---------- Backend API ---------- */
+  // Every call sends cookies, so the backend can recognise this shopper's basket (anon_id cookie).
+  function api(path, options) {
+    options = options || {};
+    var init = { method: options.method || "GET", credentials: "include", headers: { Accept: "application/json" } };
+    if (options.body !== undefined) {
+      init.headers["Content-Type"] = "application/json";
+      init.body = JSON.stringify(options.body);
+    }
+    return fetch(API_BASE + path, init).then(function (res) {
+      return res.text().then(function (text) {
+        var data = null;
+        if (text) {
+          try { data = JSON.parse(text); } catch (err) { data = null; }
+        }
+        if (!res.ok) {
+          var error = new Error((data && data.detail) || "Something went wrong (error " + res.status + ").");
+          error.status = res.status;
+          error.fields = (data && data.errors) || null;
+          throw error;
+        }
+        return data;
+      });
+    }, function () {
+      throw new Error("Can't reach the shop right now. Please try again in a moment.");
+    });
+  }
+
   /* ---------- Toast ---------- */
   var toastEl = $("#toast");
   var toastTimer = null;
-  function toast(msg) {
+  function toast(msg, duration) {
     toastEl.textContent = msg;
     toastEl.classList.add("is-visible");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { toastEl.classList.remove("is-visible"); }, 2600);
+    toastTimer = setTimeout(function () { toastEl.classList.remove("is-visible"); }, duration || 2800);
   }
 
   /* ---------- Header ---------- */
@@ -166,11 +215,54 @@
     reveals.forEach(function (el) { el.classList.add("is-visible"); });
   }
 
-  /* ---------- Static covers ---------- */
-  $("#heroBooks").innerHTML = ["pride-and-prejudice", "midnight-library", "dune"]
-    .map(function (id) { return coverHtml(BOOK_BY_ID[id]); }).join("");
-  $("#featuredCover").innerHTML = coverHtml(BOOK_BY_ID["time-shelter"]);
-  $("#featuredPrice").textContent = money(BOOK_BY_ID["time-shelter"].price);
+  /* ---------- Decorative covers ---------- */
+  $("#heroBooks").innerHTML = ["Pride and Prejudice", "The Midnight Library", "Dune"]
+    .map(function (title) { return coverHtml(detailsFor(title)); }).join("");
+  $("#featuredCover").innerHTML = coverHtml(detailsFor("Time Shelter"));
+
+  /* ---------- Books from the backend ---------- */
+  var books = [];
+  var BOOK_BY_ID = {};
+  var booksLoaded = false;
+
+  function loadBooks() {
+    return api("/items").then(function (items) {
+      books = items.map(function (item, i) {
+        var d = detailsFor(item.name);
+        return {
+          id: String(item.id),
+          title: item.name,
+          price: toCents(item.price),
+          stock: item.quantity,
+          author: d.author,
+          genre: d.genre,
+          year: d.year,
+          format: d.format,
+          badge: d.badge,
+          cover: d.cover,
+          desc: d.desc,
+          order: i
+        };
+      });
+      BOOK_BY_ID = {};
+      books.forEach(function (b) { BOOK_BY_ID[b.id] = b; });
+      booksLoaded = true;
+      $("#loadError").hidden = true;
+      renderGenreOptions();
+      renderCategories();
+      renderBooks();
+      renderFeatured();
+    }).catch(function (err) {
+      if (booksLoaded) return; // keep showing the last good list
+      grid.innerHTML = "";
+      grid.hidden = true;
+      emptyEl.hidden = true;
+      resultsEl.textContent = "";
+      $("#loadErrorText").textContent = err.message;
+      $("#loadError").hidden = false;
+      categoryGrid.innerHTML = "";
+    });
+  }
 
   /* ---------- Shop: filters, search, sort ---------- */
   var grid = $("#bookGrid");
@@ -180,23 +272,39 @@
   var resultsEl = $("#results");
   var emptyEl = $("#emptyState");
 
-  genreSelect.innerHTML = '<option value="all">All categories</option>' +
-    GENRES.map(function (g) { return '<option value="' + g.id + '">' + esc(g.name) + "</option>"; }).join("");
-
   var SORTERS = {
     featured: function (a, b) { return a.order - b.order; },
     "price-asc": function (a, b) { return a.price - b.price || a.order - b.order; },
     "price-desc": function (a, b) { return b.price - a.price || a.order - b.order; },
     title: function (a, b) { return a.title.localeCompare(b.title, "en", { sensitivity: "base" }); },
-    newest: function (a, b) { return b.year - a.year || a.order - b.order; }
+    newest: function (a, b) { return (b.year || 0) - (a.year || 0) || a.order - b.order; }
   };
 
+  function genresInStock() {
+    return GENRES.filter(function (g) { return books.some(function (b) { return b.genre === g.id; }); });
+  }
+
+  function renderGenreOptions() {
+    var current = genreSelect.value || "all";
+    var genres = genresInStock();
+    genreSelect.innerHTML = '<option value="all">All categories</option>' +
+      genres.map(function (g) { return '<option value="' + g.id + '">' + esc(g.name) + "</option>"; }).join("");
+    genreSelect.value = genres.some(function (g) { return g.id === current; }) ? current : "all";
+  }
+
+  function stockNote(book) {
+    if (book.stock <= 0) return '<p class="book__stock book__stock--out">Out of stock</p>';
+    if (book.stock <= LOW_STOCK) return '<p class="book__stock">Only ' + book.stock + " left</p>";
+    return "";
+  }
+
   function renderBooks() {
+    if (!booksLoaded) return;
     var q = normalize(searchInput.value.trim());
     var genre = genreSelect.value;
     var sorter = SORTERS[sortSelect.value] || SORTERS.featured;
 
-    var list = BOOKS.filter(function (b) {
+    var list = books.filter(function (b) {
       if (genre !== "all" && b.genre !== genre) return false;
       if (!q) return true;
       return normalize(b.title).indexOf(q) !== -1 || normalize(b.author).indexOf(q) !== -1;
@@ -204,20 +312,23 @@
 
     grid.innerHTML = list.map(function (b, i) {
       var badge = BADGES[b.badge];
+      var soldOut = b.stock <= 0;
       return '' +
         '<article class="book" style="animation-delay:' + Math.min(i * 40, 400) + 'ms">' +
           '<button class="book__open" type="button" data-open="' + b.id + '" tabindex="-1" aria-hidden="true">' +
             (badge ? '<span class="badge ' + badge.cls + '">' + badge.label + "</span>" : "") +
             coverHtml(b) +
           "</button>" +
-          '<p class="book__genre">' + esc(GENRE_BY_ID[b.genre].name) + "</p>" +
+          '<p class="book__genre">' + esc(genreName(b)) + "</p>" +
           '<h3 class="book__title"><button type="button" data-open="' + b.id + '">' + esc(b.title) + "</button></h3>" +
-          '<p class="book__author">' + esc(b.author) + "</p>" +
+          (b.author ? '<p class="book__author">' + esc(b.author) + "</p>" : "") +
+          stockNote(b) +
           '<div class="book__foot">' +
             '<span class="book__price">' + money(b.price) + "</span>" +
-            '<button class="add" type="button" data-add="' + b.id + '" aria-label="Add ' + esc(b.title) + ' to basket">' +
+            '<button class="add" type="button" data-add="' + b.id + '"' + (soldOut ? " disabled" : "") +
+              ' aria-label="Add ' + esc(b.title) + ' to basket">' +
               '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>' +
-              "<span>Add</span>" +
+              "<span>" + (soldOut ? "Sold out" : "Add") + "</span>" +
             "</button>" +
           "</div>" +
         "</article>";
@@ -241,26 +352,31 @@
     searchInput.focus();
   });
 
+  $("#retryLoad").addEventListener("click", function () {
+    resultsEl.textContent = "Loading books…";
+    $("#loadError").hidden = true;
+    loadBooks();
+  });
+
   $("#searchJump").addEventListener("click", function (e) {
     e.preventDefault();
     $("#shop").scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth" });
     searchInput.focus({ preventScroll: true });
   });
 
-  function prefersReducedMotion() {
-    return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  }
-
   /* ---------- Categories ---------- */
   var categoryGrid = $("#categoryGrid");
-  categoryGrid.innerHTML = GENRES.map(function (g) {
-    var count = BOOKS.filter(function (b) { return b.genre === g.id; }).length;
-    return '<button class="category" type="button" data-genre="' + g.id + '">' +
-      '<span class="category__dot" style="background:' + g.color + '" aria-hidden="true"></span>' +
-      '<span class="category__name">' + esc(g.name) + "</span>" +
-      '<span class="category__count">' + count + (count === 1 ? " book" : " books") + "</span>" +
-      "</button>";
-  }).join("");
+
+  function renderCategories() {
+    categoryGrid.innerHTML = genresInStock().map(function (g) {
+      var count = books.filter(function (b) { return b.genre === g.id; }).length;
+      return '<button class="category" type="button" data-genre="' + g.id + '">' +
+        '<span class="category__dot" style="background:' + g.color + '" aria-hidden="true"></span>' +
+        '<span class="category__name">' + esc(g.name) + "</span>" +
+        '<span class="category__count">' + count + (count === 1 ? " book" : " books") + "</span>" +
+        "</button>";
+    }).join("");
+  }
 
   categoryGrid.addEventListener("click", function (e) {
     var btn = e.target.closest("[data-genre]");
@@ -271,110 +387,95 @@
     $("#shop").scrollIntoView({ behavior: prefersReducedMotion() ? "auto" : "smooth" });
   });
 
-  renderBooks();
+  /* ---------- Book of the month ---------- */
+  function renderFeatured() {
+    var featured = books.filter(function (b) { return normalize(b.title) === normalize("Time Shelter"); })[0];
+    var buy = $("#featuredBuy");
+    if (!featured) {
+      buy.hidden = true;
+      return;
+    }
+    buy.hidden = false;
+    $("#featuredPrice").textContent = money(featured.price);
+    var addBtn = $("#featuredAdd");
+    addBtn.setAttribute("data-add", featured.id);
+    addBtn.disabled = featured.stock <= 0;
+    addBtn.textContent = featured.stock <= 0 ? "Sold out" : "Add to basket";
+    $("#featuredMore").setAttribute("data-open", featured.id);
+  }
 
-  /* ---------- Book details dialog ---------- */
+  /* ---------- Dialogs (book details, checkout) ---------- */
+  var supportsDialog = typeof HTMLDialogElement === "function" && typeof $("#bookModal").showModal === "function";
+
+  function openDialog(dialog) {
+    if (supportsDialog) {
+      if (!dialog.open) dialog.showModal();
+    } else {
+      dialog.setAttribute("open", "");
+    }
+    document.body.classList.add("no-scroll");
+  }
+
+  function closeDialog(dialog) {
+    if (supportsDialog) {
+      if (dialog.open) dialog.close();
+    } else {
+      dialog.removeAttribute("open");
+      onDialogClosed();
+    }
+  }
+
+  function anyDialogOpen() {
+    return $$("dialog").some(function (d) { return d.hasAttribute("open"); });
+  }
+
+  function onDialogClosed() {
+    if (!cartEl.classList.contains("is-open") && !anyDialogOpen()) document.body.classList.remove("no-scroll");
+  }
+
+  $$("dialog").forEach(function (dialog) {
+    dialog.addEventListener("close", onDialogClosed);
+    // A click on the backdrop (outside the dialog box) closes it
+    dialog.addEventListener("click", function (e) {
+      if (e.target === dialog) closeDialog(dialog);
+    });
+  });
+
+  /* ---------- Book details ---------- */
   var modal = $("#bookModal");
   var modalAdd = $("#modalAdd");
   var currentBookId = null;
-  var supportsDialog = typeof modal.showModal === "function";
 
   function openBook(id) {
     var b = BOOK_BY_ID[id];
     if (!b) return;
     currentBookId = id;
     $("#modalCover").innerHTML = coverHtml(b);
-    $("#modalGenre").textContent = GENRE_BY_ID[b.genre].name;
+    $("#modalGenre").textContent = genreName(b);
     $("#modalTitle").textContent = b.title;
-    $("#modalAuthor").textContent = "by " + b.author;
+    $("#modalAuthor").textContent = b.author ? "by " + b.author : "";
     $("#modalDesc").textContent = b.desc;
-    $("#modalYear").textContent = String(b.year);
+    $("#modalYear").textContent = b.year ? String(b.year) : "—";
     $("#modalFormat").textContent = b.format;
+    $("#modalStock").textContent = b.stock <= 0 ? "Out of stock" : b.stock + " in stock";
     $("#modalPrice").textContent = money(b.price);
+    modalAdd.disabled = b.stock <= 0;
+    modalAdd.textContent = b.stock <= 0 ? "Sold out" : "Add to basket";
     modalAdd.setAttribute("aria-label", "Add " + b.title + " to basket");
-
-    if (supportsDialog) {
-      if (!modal.open) modal.showModal();
-    } else {
-      modal.setAttribute("open", "");
-    }
-    document.body.classList.add("no-scroll");
+    openDialog(modal);
   }
 
-  function closeBook() {
-    if (supportsDialog) { if (modal.open) modal.close(); }
-    else { modal.removeAttribute("open"); onModalClosed(); }
-  }
-
-  function onModalClosed() {
-    if (!cartEl.classList.contains("is-open")) document.body.classList.remove("no-scroll");
-  }
-
-  modal.addEventListener("close", onModalClosed);
-  $("#modalClose").addEventListener("click", closeBook);
-  // Click on the backdrop (outside the dialog box) closes it
-  modal.addEventListener("click", function (e) {
-    if (e.target === modal) closeBook();
-  });
+  $("#modalClose").addEventListener("click", function () { closeDialog(modal); });
   modalAdd.addEventListener("click", function () {
-    if (currentBookId) addToCart(currentBookId);
-    closeBook();
+    if (!currentBookId) return;
+    addToCart(currentBookId, modalAdd).then(function (ok) {
+      if (ok) closeDialog(modal);
+    });
   });
 
-  /* ---------- Basket ---------- */
-  var cart = loadCart();
-
-  function loadCart() {
-    try {
-      var data = JSON.parse(window.localStorage.getItem(CART_KEY) || "{}");
-      var clean = {};
-      if (data && typeof data === "object") {
-        Object.keys(data).forEach(function (id) {
-          var qty = parseInt(data[id], 10);
-          if (BOOK_BY_ID[id] && qty > 0) clean[id] = Math.min(qty, MAX_QTY);
-        });
-      }
-      return clean;
-    } catch (err) {
-      return {};
-    }
-  }
-
-  function saveCart() {
-    try { window.localStorage.setItem(CART_KEY, JSON.stringify(cart)); }
-    catch (err) { /* storage unavailable: basket still works for this visit */ }
-  }
-
-  function subtotal() {
-    return Object.keys(cart).reduce(function (s, id) { return s + BOOK_BY_ID[id].price * cart[id]; }, 0);
-  }
-  function itemCount() {
-    return Object.keys(cart).reduce(function (s, id) { return s + cart[id]; }, 0);
-  }
-  function shippingFor(sub) { return sub >= FREE_SHIPPING_FROM ? 0 : SHIPPING; }
-
-  function addToCart(id) {
-    var b = BOOK_BY_ID[id];
-    if (!b) return;
-    if ((cart[id] || 0) >= MAX_QTY) {
-      toast("You can order up to " + MAX_QTY + " copies of one book");
-      return;
-    }
-    cart[id] = (cart[id] || 0) + 1;
-    saveCart();
-    renderCart();
-    cartBtn.classList.remove("bump");
-    void cartBtn.offsetWidth; // restart the animation
-    cartBtn.classList.add("bump");
-    toast("“" + b.title + "” added to your basket");
-  }
-
-  function setQty(id, qty) {
-    if (qty <= 0) delete cart[id];
-    else cart[id] = Math.min(qty, MAX_QTY);
-    saveCart();
-    renderCart();
-  }
+  /* ---------- Basket (stored by the backend in Redis) ---------- */
+  var EMPTY_CART = { items: [], totalQuantity: 0, subtotal: 0, deliveryFee: 0, total: 0 };
+  var cart = EMPTY_CART;
 
   var cartEl = $("#cart");
   var cartBtn = $("#cartOpen");
@@ -384,67 +485,108 @@
   var lastFocus = null;
   var overlayTimer = null;
 
+  function setCart(data) {
+    cart = data || EMPTY_CART;
+    renderCart();
+  }
+
+  function loadCart() {
+    return api("/cart").then(setCart).catch(function () { /* the shop error message already explains */ });
+  }
+
+  function withBusy(btn, promise) {
+    if (btn) btn.disabled = true;
+    return promise.then(function (value) {
+      if (btn) btn.disabled = false;
+      return value;
+    }, function (err) {
+      if (btn) btn.disabled = false;
+      throw err;
+    });
+  }
+
+  // Resolves to true when the book was added
+  function addToCart(id, btn) {
+    var b = BOOK_BY_ID[id];
+    if (!b) return Promise.resolve(false);
+    return withBusy(btn, api("/cart/items", { method: "POST", body: { itemId: Number(id), quantity: 1 } }))
+      .then(function (data) {
+        setCart(data);
+        cartBtn.classList.remove("bump");
+        void cartBtn.offsetWidth; // restart the animation
+        cartBtn.classList.add("bump");
+        toast("“" + b.title + "” added to your basket");
+        return true;
+      })
+      .catch(function (err) {
+        toast(err.message, 4000);
+        if (err.status === 409) loadBooks(); // stock changed: refresh what the shop shows
+        return false;
+      });
+  }
+
+  function setQty(id, qty, btn) {
+    return withBusy(btn, api("/cart/items/" + encodeURIComponent(id), { method: "PUT", body: { quantity: qty } }))
+      .then(setCart)
+      .catch(function (err) { toast(err.message, 4000); });
+  }
+
   function renderCart() {
-    var ids = Object.keys(cart);
-    var count = itemCount();
+    var items = cart.items || [];
+    var count = cart.totalQuantity || 0;
     var countEl = $("#cartCount");
     countEl.textContent = String(count);
     countEl.classList.toggle("is-visible", count > 0);
     cartBtn.setAttribute("aria-label", "Open basket, " + count + (count === 1 ? " item" : " items"));
 
-    $("#cartEmpty").hidden = ids.length > 0;
-    $("#cartFoot").hidden = ids.length === 0;
+    $("#cartEmpty").hidden = items.length > 0;
+    $("#cartFoot").hidden = items.length === 0;
 
-    cartList.innerHTML = ids.map(function (id) {
-      var b = BOOK_BY_ID[id];
-      var qty = cart[id];
+    cartList.innerHTML = items.map(function (line) {
+      var d = detailsFor(line.name);
+      var book = { title: line.name, author: d.author, cover: d.cover };
+      var id = String(line.itemId);
+      var price = toCents(line.price);
       return '<li class="cart__item">' +
-        coverHtml(b) +
+        coverHtml(book) +
         "<div>" +
-          '<p class="cart__name">' + esc(b.title) + "</p>" +
-          '<p class="cart__meta">' + esc(b.author) + " · " + money(b.price) + "</p>" +
+          '<p class="cart__name">' + esc(line.name) + "</p>" +
+          '<p class="cart__meta">' + (d.author ? esc(d.author) + " · " : "") + money(price) + "</p>" +
         "</div>" +
         '<div class="cart__right">' +
-          '<span class="cart__line">' + money(b.price * qty) + "</span>" +
+          '<span class="cart__line">' + money(toCents(line.lineTotal)) + "</span>" +
           '<div class="qty">' +
-            '<button type="button" data-dec="' + id + '" aria-label="Remove one copy of ' + esc(b.title) + '">−</button>' +
-            '<span aria-label="Quantity ' + qty + '">' + qty + "</span>" +
-            '<button type="button" data-inc="' + id + '" aria-label="Add one copy of ' + esc(b.title) + '">+</button>' +
+            '<button type="button" data-dec="' + id + '" data-qty="' + line.quantity + '" aria-label="Remove one copy of ' + esc(line.name) + '">−</button>' +
+            '<span aria-label="Quantity ' + line.quantity + '">' + line.quantity + "</span>" +
+            '<button type="button" data-inc="' + id + '" data-qty="' + line.quantity + '" aria-label="Add one copy of ' + esc(line.name) + '">+</button>' +
           "</div>" +
         "</div>" +
       "</li>";
     }).join("");
 
-    if (!ids.length) return;
+    if (!items.length) return;
 
-    var sub = subtotal();
-    var ship = shippingFor(sub);
+    var sub = toCents(cart.subtotal);
+    var ship = toCents(cart.deliveryFee);
     $("#cartSubtotal").textContent = money(sub);
     $("#cartDelivery").textContent = ship === 0 ? "Free" : money(ship);
-    $("#cartTotal").textContent = money(sub + ship);
+    $("#cartTotal").textContent = money(toCents(cart.total));
     $("#cartShipping").textContent = ship === 0
       ? "Your order qualifies for free delivery."
-      : "Add " + money(FREE_SHIPPING_FROM - sub) + " more for free delivery.";
+      : "Add " + money(toCents(cart.freeDeliveryFrom) - sub) + " more for free delivery.";
   }
 
   cartList.addEventListener("click", function (e) {
-    var inc = e.target.closest("[data-inc]");
-    var dec = e.target.closest("[data-dec]");
-    var id, btn;
-    if (inc) {
-      id = inc.getAttribute("data-inc");
-      if ((cart[id] || 0) >= MAX_QTY) { toast("You can order up to " + MAX_QTY + " copies of one book"); return; }
-      setQty(id, (cart[id] || 0) + 1);
-      btn = cartList.querySelector('[data-inc="' + id + '"]');
-    } else if (dec) {
-      id = dec.getAttribute("data-dec");
-      setQty(id, (cart[id] || 0) - 1);
-      btn = cartList.querySelector('[data-dec="' + id + '"]');
-    } else {
-      return;
-    }
-    // Keep keyboard focus in a sensible place after re-render
-    (btn || cartClose).focus();
+    var btn = e.target.closest("[data-inc], [data-dec]");
+    if (!btn) return;
+    var inc = btn.hasAttribute("data-inc");
+    var id = btn.getAttribute(inc ? "data-inc" : "data-dec");
+    var qty = Number(btn.getAttribute("data-qty")) + (inc ? 1 : -1);
+    setQty(id, qty, btn).then(function () {
+      // Keep keyboard focus in a sensible place after re-render
+      var again = cartList.querySelector("[" + (inc ? "data-inc" : "data-dec") + '="' + id + '"]');
+      (again || cartClose).focus();
+    });
   });
 
   function openCart() {
@@ -461,6 +603,7 @@
     cartBtn.setAttribute("aria-expanded", "true");
     document.body.classList.add("no-scroll");
     cartClose.focus();
+    loadCart();
   }
 
   function closeCart(restoreFocus) {
@@ -470,7 +613,7 @@
     cartEl.setAttribute("inert", "");
     cartEl.setAttribute("aria-hidden", "true");
     cartBtn.setAttribute("aria-expanded", "false");
-    document.body.classList.remove("no-scroll");
+    if (!anyDialogOpen()) document.body.classList.remove("no-scroll");
     overlayTimer = setTimeout(function () { overlay.hidden = true; }, 300);
     if (restoreFocus !== false && lastFocus && typeof lastFocus.focus === "function") lastFocus.focus();
   }
@@ -481,29 +624,145 @@
   $("#cartBrowse").addEventListener("click", function () { closeCart(false); });
 
   $("#cartClear").addEventListener("click", function () {
-    cart = {};
-    saveCart();
-    renderCart();
-    cartClose.focus();
+    var btn = this;
+    withBusy(btn, api("/cart", { method: "DELETE" }))
+      .then(function (data) {
+        setCart(data);
+        cartClose.focus();
+      })
+      .catch(function (err) { toast(err.message, 4000); });
   });
 
+  /* ---------- Checkout ---------- */
+  var checkoutModal = $("#checkoutModal");
+  var checkoutForm = $("#checkoutForm");
+  var checkoutError = $("#checkoutError");
+  var checkoutSubmit = $("#checkoutSubmit");
+
+  var CHECKS = {
+    firstName: function (v) { return v ? "" : "Please enter your first name"; },
+    lastName: function (v) { return v ? "" : "Please enter your last name"; },
+    email: function (v) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v) ? "" : "Please enter a valid email"; },
+    phoneNumber: function (v) { return /^\+?[0-9 ()-]{7,20}$/.test(v) ? "" : "Please enter a valid phone number"; },
+    address: function (v) { return v ? "" : "Please enter your delivery address"; }
+  };
+
+  function setFieldError(name, message) {
+    var input = checkoutForm.elements[name];
+    var error = $('[data-error-for="' + name + '"]', checkoutForm);
+    if (!input || !error) return;
+    error.textContent = message || "";
+    if (message) input.setAttribute("aria-invalid", "true");
+    else input.removeAttribute("aria-invalid");
+  }
+
+  function clearCheckoutErrors() {
+    Object.keys(CHECKS).forEach(function (name) { setFieldError(name, ""); });
+    checkoutError.textContent = "";
+  }
+
+  function paymentLabel() {
+    var type = checkoutForm.elements.paymentType.value;
+    checkoutSubmit.textContent = type === "CARD" ? "Continue to secure payment" : "Place order";
+  }
+
   $("#checkout").addEventListener("click", function () {
-    var sub = subtotal();
-    var total = sub + shippingFor(sub);
-    cart = {};
-    saveCart();
-    renderCart();
-    closeCart();
-    toast("Thank you! Your order of " + money(total) + " has been placed.");
+    if (!cart.items || !cart.items.length) return;
+    closeCart(false);
+    clearCheckoutErrors();
+    $("#checkoutSummary").textContent = cart.totalQuantity + (cart.totalQuantity === 1 ? " book" : " books") +
+      " · total " + money(toCents(cart.total)) + (toCents(cart.deliveryFee) === 0 ? " (free delivery)" : " incl. delivery");
+    paymentLabel();
+    openDialog(checkoutModal);
+    checkoutForm.elements.firstName.focus();
   });
+
+  $("#checkoutClose").addEventListener("click", function () { closeDialog(checkoutModal); });
+  $$('input[name="paymentType"]', checkoutForm).forEach(function (r) { r.addEventListener("change", paymentLabel); });
+
+  Object.keys(CHECKS).forEach(function (name) {
+    checkoutForm.elements[name].addEventListener("input", function () {
+      if (this.getAttribute("aria-invalid") === "true") setFieldError(name, CHECKS[name](this.value.trim()));
+    });
+  });
+
+  checkoutForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    clearCheckoutErrors();
+
+    var body = { paymentType: checkoutForm.elements.paymentType.value };
+    var firstInvalid = null;
+    Object.keys(CHECKS).forEach(function (name) {
+      var value = checkoutForm.elements[name].value.trim();
+      body[name] = value;
+      var message = CHECKS[name](value);
+      if (message) {
+        setFieldError(name, message);
+        if (!firstInvalid) firstInvalid = checkoutForm.elements[name];
+      }
+    });
+    if (firstInvalid) {
+      firstInvalid.focus();
+      return;
+    }
+
+    var label = checkoutSubmit.textContent;
+    checkoutSubmit.textContent = body.paymentType === "CARD" ? "Redirecting to payment…" : "Placing order…";
+    withBusy(checkoutSubmit, api("/orders", { method: "POST", body: body }))
+      .then(function (result) {
+        if (result.paymentType === "CARD" && result.checkoutUrl) {
+          // Stripe takes over; the order is created once the payment is completed
+          window.location.href = result.checkoutUrl;
+          return;
+        }
+        checkoutSubmit.textContent = label;
+        closeDialog(checkoutModal);
+        checkoutForm.reset();
+        paymentLabel();
+        setCart(EMPTY_CART);
+        loadBooks();
+        toast("Thank you, " + body.firstName + "! Order #" + result.orderId + " is placed — please pay " +
+          money(toCents(result.total)) + " in cash on delivery.", 6000);
+      })
+      .catch(function (err) {
+        checkoutSubmit.textContent = label;
+        if (err.fields) {
+          Object.keys(err.fields).forEach(function (name) { setFieldError(name, err.fields[name]); });
+        }
+        checkoutError.textContent = err.message;
+        if (err.status === 409) {
+          loadBooks();
+          loadCart();
+        }
+      });
+  });
+
+  // Coming back from Stripe Checkout
+  (function handlePaymentReturn() {
+    var params = new URLSearchParams(window.location.search);
+    var status = params.get("payment");
+    if (!status) return;
+    if (status === "success") {
+      toast("Payment received — thank you! Your order is confirmed.", 6000);
+      // The backend empties the basket when Stripe confirms the payment; check again shortly
+      setTimeout(loadCart, 2500);
+    } else if (status === "cancelled") {
+      toast("Payment cancelled — your basket is still here.", 5000);
+    }
+    if (window.history && window.history.replaceState) {
+      window.history.replaceState(null, "", window.location.pathname + window.location.hash);
+    }
+  })();
 
   // Add / open buttons anywhere on the page (grid, featured section)
   document.addEventListener("click", function (e) {
     var addBtn = e.target.closest("[data-add]");
     if (addBtn) {
-      addToCart(addBtn.getAttribute("data-add"));
-      if (addBtn.classList.contains("add")) {
+      if (addBtn.disabled) return;
+      addToCart(addBtn.getAttribute("data-add"), addBtn).then(function (ok) {
+        if (!ok || !addBtn.classList.contains("add")) return;
         var label = addBtn.querySelector("span");
+        if (!label) return;
         addBtn.classList.add("is-added");
         label.textContent = "Added";
         clearTimeout(addBtn._t);
@@ -511,7 +770,7 @@
           addBtn.classList.remove("is-added");
           label.textContent = "Add";
         }, 1200);
-      }
+      });
       return;
     }
     var openBtn = e.target.closest("[data-open]");
@@ -521,7 +780,7 @@
   document.addEventListener("keydown", function (e) {
     if (e.key === "Escape") {
       if (cartEl.classList.contains("is-open")) closeCart();
-      else if (!supportsDialog && modal.hasAttribute("open")) closeBook();
+      else if (!supportsDialog && anyDialogOpen()) $$("dialog[open]").forEach(closeDialog);
       else if (nav.classList.contains("is-open")) { setNav(false); burger.focus(); }
       return;
     }
@@ -537,7 +796,9 @@
     }
   });
 
-  renderCart();
+  resultsEl.textContent = "Loading books…";
+  loadBooks();
+  loadCart();
 
   /* ---------- Opening hours ---------- */
   function sofiaNow() {
